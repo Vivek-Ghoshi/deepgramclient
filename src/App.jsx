@@ -10,7 +10,7 @@ const App = () => {
 
   useEffect(() => {
     console.log("📡 Connecting to backend WebSocket...");
-    const ws = new WebSocket("ws:https://deepgramtask.onrender.com");
+    const ws = new WebSocket("wss://deepgramtask.onrender.com");
 
     ws.onopen = () => {
       console.log("✅ Connected to backend WebSocket");

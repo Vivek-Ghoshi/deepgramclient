@@ -56,64 +56,130 @@ const App = () => {
     }
   };
 
+  // const toggleRecording = async () => {
+  //   if (!isRecording) {
+  //     try {
+  //       console.log("🎤 Starting microphone access...");
+  //       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  //       console.log("🎙️ Microphone stream started");
+
+  //       const mediaRecorder = new MediaRecorder(stream);
+  //       mediaRecorderRef.current = mediaRecorder;
+
+  //       const context = new AudioContext({ sampleRate: 16000 });
+  //       console.log("🧪 AudioContext created with sample rate:", context.sampleRate);
+
+  //       await context.audioWorklet.addModule("/pcm-processor.js");
+  //       console.log("✅ PCM processor module loaded");
+
+  //       const source = context.createMediaStreamSource(stream);
+  //       const pcmNode = new AudioWorkletNode(context, "pcm-processor");
+
+  //       pcmNode.port.onmessage = (event) => {
+  //         const pcmBuffer = event.data;
+  //         if (socket && socket.readyState === WebSocket.OPEN) {
+  //           console.log("📤 Sending raw PCM buffer of size:", pcmBuffer.byteLength);
+  //           socket.send(pcmBuffer);
+  //         } else {
+  //           console.warn("⚠️ Socket not open when trying to send PCM data");
+  //         }
+  //       };
+
+  //       source.connect(pcmNode).connect(context.destination);
+  //       console.log("🔗 PCM audio stream pipeline connected");
+
+  //       mediaRecorder.ondataavailable = (e) => {
+  //         if (e.data.size > 0) {
+  //           console.log("📦 MediaRecorder chunk available, size:", e.data.size);
+  //           socket.send(e.data);
+  //         }
+  //       };
+
+  //       mediaRecorder.onstop = () => {
+  //         console.log("🛑 MediaRecorder stopped");
+  //         stream.getTracks().forEach((track) => track.stop());
+  //       };
+
+  //       mediaRecorder.start(250); // send audio every 250ms
+  //       console.log("▶️ MediaRecorder started with interval: 250ms");
+  //       setIsRecording(true);
+  //     } catch (err) {
+  //       console.error("❌ Error starting recording:", err);
+  //     }
+  //   } else {
+  //     console.log("🛑 Stopping recording...");
+  //     if (mediaRecorderRef.current) {
+  //       mediaRecorderRef.current.stop();
+  //     }
+  //     setIsRecording(false);
+  //   }
+  // };
+
+  
   const toggleRecording = async () => {
-    if (!isRecording) {
-      try {
-        console.log("🎤 Starting microphone access...");
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        console.log("🎙️ Microphone stream started");
-
-        const mediaRecorder = new MediaRecorder(stream);
-        mediaRecorderRef.current = mediaRecorder;
-
-        const context = new AudioContext({ sampleRate: 16000 });
-        console.log("🧪 AudioContext created with sample rate:", context.sampleRate);
-
-        await context.audioWorklet.addModule("/pcm-processor.js");
-        console.log("✅ PCM processor module loaded");
-
-        const source = context.createMediaStreamSource(stream);
-        const pcmNode = new AudioWorkletNode(context, "pcm-processor");
-
-        pcmNode.port.onmessage = (event) => {
-          const pcmBuffer = event.data;
-          if (socket && socket.readyState === WebSocket.OPEN) {
-            console.log("📤 Sending raw PCM buffer of size:", pcmBuffer.byteLength);
-            socket.send(pcmBuffer);
-          } else {
-            console.warn("⚠️ Socket not open when trying to send PCM data");
-          }
-        };
-
-        source.connect(pcmNode).connect(context.destination);
-        console.log("🔗 PCM audio stream pipeline connected");
-
-        mediaRecorder.ondataavailable = (e) => {
-          if (e.data.size > 0) {
-            console.log("📦 MediaRecorder chunk available, size:", e.data.size);
-            socket.send(e.data);
-          }
-        };
-
-        mediaRecorder.onstop = () => {
-          console.log("🛑 MediaRecorder stopped");
-          stream.getTracks().forEach((track) => track.stop());
-        };
-
-        mediaRecorder.start(250); // send audio every 250ms
-        console.log("▶️ MediaRecorder started with interval: 250ms");
-        setIsRecording(true);
-      } catch (err) {
-        console.error("❌ Error starting recording:", err);
-      }
-    } else {
-      console.log("🛑 Stopping recording...");
-      if (mediaRecorderRef.current) {
-        mediaRecorderRef.current.stop();
-      }
-      setIsRecording(false);
+  if (!isRecording) {
+    if (!socket || socket.readyState !== WebSocket.OPEN) {
+      console.warn("⏳ Waiting for WebSocket to open...");
+      const waitForSocket = () =>
+        new Promise((resolve) => {
+          const checkSocketReady = () => {
+            if (socket.readyState === WebSocket.OPEN) {
+              resolve();
+            } else {
+              setTimeout(checkSocketReady, 100);
+            }
+          };
+          checkSocketReady();
+        });
+      await waitForSocket();
+      console.log("✅ WebSocket is now open, starting recording...");
     }
-  };
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+
+      const context = new AudioContext({ sampleRate: 16000 });
+      await context.audioWorklet.addModule("/pcm-processor.js");
+
+      const source = context.createMediaStreamSource(stream);
+      const pcmNode = new AudioWorkletNode(context, "pcm-processor");
+
+      pcmNode.port.onmessage = (event) => {
+        const pcmBuffer = event.data;
+        if (socket.readyState === WebSocket.OPEN) {
+          socket.send(pcmBuffer);
+        } else {
+          console.warn("⚠️ Socket not open when trying to send PCM data");
+        }
+      };
+
+      source.connect(pcmNode).connect(context.destination);
+
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0 && socket.readyState === WebSocket.OPEN) {
+          socket.send(e.data);
+        }
+      };
+
+      mediaRecorder.onstop = () => {
+        stream.getTracks().forEach((track) => track.stop());
+      };
+
+      mediaRecorder.start(250);
+      setIsRecording(true);
+    } catch (err) {
+      console.error("❌ Error starting recording:", err);
+    }
+  } else {
+    if (mediaRecorderRef.current) {
+      mediaRecorderRef.current.stop();
+    }
+    setIsRecording(false);
+  }
+};
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#1D3557] via-[#457B9D] to-[#E63946] p-6 flex flex-col items-center text-white">

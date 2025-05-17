@@ -185,7 +185,7 @@ const App = () => {
     <div className="min-h-screen bg-gradient-to-br from-[#1D3557] via-[#457B9D] to-[#E63946] p-6 flex flex-col items-center text-white">
       <h1 className="text-3xl font-bold mb-4">🧠 Deepgram Voice Agent</h1>
 
-      <div className="w-full max-w-2xl bg-white/10 backdrop-blur-md rounded-xl shadow-xl p-4 h-[70vh] overflow-y-auto space-y-3">
+      <div className="chat w-full max-w-2xl bg-white/10 backdrop-blur-md rounded-xl shadow-xl p-4 h-[70vh] overflow-y-auto space-y-3 ">
         {messages.map((msg, index) => (
           <div
             key={index}

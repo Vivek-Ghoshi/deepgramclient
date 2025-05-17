@@ -6,7 +6,7 @@ const App = () => {
   const [userInput, setUserInput] = useState("");
   const [isRecording, setIsRecording] = useState(false);
   const mediaRecorderRef = useRef(null);
-  const audioChunksRef = useRef([]);
+  
 
   useEffect(() => {
     console.log("📡 Connecting to backend WebSocket...");
@@ -55,66 +55,6 @@ const App = () => {
       setUserInput("");
     }
   };
-
-  // const toggleRecording = async () => {
-  //   if (!isRecording) {
-  //     try {
-  //       console.log("🎤 Starting microphone access...");
-  //       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-  //       console.log("🎙️ Microphone stream started");
-
-  //       const mediaRecorder = new MediaRecorder(stream);
-  //       mediaRecorderRef.current = mediaRecorder;
-
-  //       const context = new AudioContext({ sampleRate: 16000 });
-  //       console.log("🧪 AudioContext created with sample rate:", context.sampleRate);
-
-  //       await context.audioWorklet.addModule("/pcm-processor.js");
-  //       console.log("✅ PCM processor module loaded");
-
-  //       const source = context.createMediaStreamSource(stream);
-  //       const pcmNode = new AudioWorkletNode(context, "pcm-processor");
-
-  //       pcmNode.port.onmessage = (event) => {
-  //         const pcmBuffer = event.data;
-  //         if (socket && socket.readyState === WebSocket.OPEN) {
-  //           console.log("📤 Sending raw PCM buffer of size:", pcmBuffer.byteLength);
-  //           socket.send(pcmBuffer);
-  //         } else {
-  //           console.warn("⚠️ Socket not open when trying to send PCM data");
-  //         }
-  //       };
-
-  //       source.connect(pcmNode).connect(context.destination);
-  //       console.log("🔗 PCM audio stream pipeline connected");
-
-  //       mediaRecorder.ondataavailable = (e) => {
-  //         if (e.data.size > 0) {
-  //           console.log("📦 MediaRecorder chunk available, size:", e.data.size);
-  //           socket.send(e.data);
-  //         }
-  //       };
-
-  //       mediaRecorder.onstop = () => {
-  //         console.log("🛑 MediaRecorder stopped");
-  //         stream.getTracks().forEach((track) => track.stop());
-  //       };
-
-  //       mediaRecorder.start(250); // send audio every 250ms
-  //       console.log("▶️ MediaRecorder started with interval: 250ms");
-  //       setIsRecording(true);
-  //     } catch (err) {
-  //       console.error("❌ Error starting recording:", err);
-  //     }
-  //   } else {
-  //     console.log("🛑 Stopping recording...");
-  //     if (mediaRecorderRef.current) {
-  //       mediaRecorderRef.current.stop();
-  //     }
-  //     setIsRecording(false);
-  //   }
-  // };
-
   
   const toggleRecording = async () => {
   if (!isRecording) {
@@ -182,14 +122,15 @@ const App = () => {
 
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#1D3557] via-[#457B9D] to-[#E63946] p-6 flex flex-col items-center text-white">
-      <h1 className="text-3xl font-bold mb-4">🧠 Deepgram Voice Agent</h1>
+    <div className="w-screen h-screen bg-black p-12 flex items-center justify-center">
+    <div className="rounded-xl h-[40vw] w-[45vw] bg-gradient-to-br from-[#1D3557] via-[#457B9D] to-[#E63946] p-6 flex flex-col items-center text-white shadow-lg shadow-white">
+      <h1 className="text-3xl font-bold mb-4 text-yellow-400">DeepBuddy...</h1>
 
-      <div className="chat w-full max-w-2xl bg-white/10 backdrop-blur-md rounded-xl shadow-xl p-4 h-[70vh] overflow-y-auto space-y-3 ">
+      <div className="chat w-full max-w-2xl bg-white/10 backdrop-blur-md rounded-xl shadow-xl p-4 h-[70vh] overflow-y-auto space-y-3 scrollbar-none">
         {messages.map((msg, index) => (
           <div
             key={index}
-            className={`p-3 rounded-xl max-w-[80%] ${
+            className={`p-3 rounded-xl w-fit max-w-[80%] ${
               msg.sender === "user"
                 ? "bg-[#E63946] self-end ml-auto text-right"
                 : "bg-[#1D3557] self-start mr-auto text-left"
@@ -226,6 +167,7 @@ const App = () => {
           {isRecording ? "Stop 🎙️" : "Speak 🎤"}
         </button>
       </div>
+    </div>
     </div>
   );
 };

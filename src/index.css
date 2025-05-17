@@ -1,5 +1,12 @@
 @import "tailwindcss";
 
-.chat ::-webkit-scrollbar{
-   display: none;
+.chat::-webkit-scrollbar{
+   width: 8px;
 }
+
+.chat::-webkit-scrollbar-thumb{
+   background-color: rgb(233, 193, 141);
+   border-radius: 20px;
+}
+
+/* //deepgramtask.onrender.com */
